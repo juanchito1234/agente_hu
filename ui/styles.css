@@ -1,0 +1,405 @@
+/* ============================================================
+   ui/styles.css — Tema visual ultra moderno Dark: Sidebar Compacto + Main Premium
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ---- Variables ---- */
+:root {
+  --bg-base:        #090b10;
+  --bg-sidebar:     #111420;
+  --bg-main:        #090b10;
+  --bg-card:        #151828;
+  --bg-input:       #1a1e32;
+  --accent:         #6366f1;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-light:   #a5b4fc;
+  --accent-dim:     rgba(99, 102, 241, 0.12);
+  --success:        #10b981;
+  --warning:        #f59e0b;
+  --danger:         #ef4444;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-accent:  rgba(99, 102, 241, 0.3);
+  --radius:         10px;
+  --radius-sm:      6px;
+  --shadow-lg:      0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  --transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Base Reset ---- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, .gradio-container {
+  background: var(--bg-base) !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  color: var(--text-primary) !important;
+  min-height: 100vh;
+}
+
+.gradio-container { padding: 0 !important; max-width: 100% !important; }
+footer { display: none !important; }
+
+/* ---- Layout Grid/Flex ---- */
+.gradio-container {
+  min-height: 100vh;
+}
+
+/* ============================================================
+   SIDEBAR COMPACTO Y ELEGANTE
+   ============================================================ */
+.gradio-container .sidebar,
+#hu-sidebar {
+  background: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border) !important;
+  padding: 1.25rem 1rem !important;
+  overflow-y: auto !important;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+}
+
+/* Permitir que el contenido dentro del sidebar no se corte */
+#hu-sidebar > div,
+.gradio-container .sidebar > div {
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+/* Estilo para el botón flotante / toggle nativo del sidebar de Gradio */
+.gradio-container button.sidebar-toggle,
+.gradio-container button[aria-label*="sidebar"],
+.gradio-container button[aria-label*="Sidebar"],
+.gradio-container button.toggle-button {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-accent) !important;
+  color: var(--accent-light) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+  z-index: 1000 !important;
+  transition: var(--transition) !important;
+}
+
+.gradio-container button.sidebar-toggle:hover,
+.gradio-container button[aria-label*="sidebar"]:hover {
+  background: var(--accent-dim) !important;
+  color: #ffffff !important;
+}
+
+/* Logo */
+.sb-logo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.2px;
+}
+
+/* Headers de sección */
+.sb-section-label {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  color: var(--accent-light) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  margin-top: 0.6rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+.sb-divider {
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  margin: 0.75rem 0 !important;
+}
+
+/* Subtextos y estados */
+.sb-status p, .sb-status {
+  font-size: 0.75rem !important;
+  color: var(--text-secondary) !important;
+  margin-top: 0.15rem !important;
+}
+
+.sb-global-status p, .sb-global-status {
+  font-size: 0.78rem !important;
+  color: var(--text-secondary) !important;
+  background: rgba(255,255,255,0.03);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+/* Filas de entrada de Keys */
+.sb-input-row {
+  display: flex !important;
+  gap: 0.35rem !important;
+  align-items: center !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.sb-actions-row {
+  display: flex !important;
+  gap: 0.35rem !important;
+  align-items: center !important;
+}
+
+/* Botones en Sidebar */
+.sb-btn-add {
+  background: var(--accent-dim) !important;
+  border: 1px solid var(--border-accent) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--accent-light) !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  padding: 0.45rem 0.65rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+.sb-btn-add:hover {
+  background: rgba(99, 102, 241, 0.25) !important;
+}
+
+.sb-btn-remove {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--danger) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 0.45rem 0.55rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+.sb-btn-remove:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+}
+
+.sb-eye-btn {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  padding: 0.45rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+.sb-eye-btn:hover {
+  color: var(--text-primary) !important;
+  border-color: var(--border-accent) !important;
+}
+
+/* ============================================================
+   MAIN CONTENT AREA (Panel principal)
+   ============================================================ */
+#hu-main,
+.gradio-container #hu-main {
+  background: var(--bg-main) !important;
+  padding: 2.2rem 2.8rem !important;
+  flex: 1 !important;
+  overflow-y: auto;
+  max-width: 100% !important;
+}
+
+/* Header */
+.hu-header {
+  margin-bottom: 1.8rem;
+}
+.hu-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.35rem;
+  background: linear-gradient(120deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hu-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.hu-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  color: var(--accent-light);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.65rem;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   INPUTS & CONTROLES DE GRADIO OVERRIDES
+   ============================================================ */
+.gradio-container .block,
+.gradio-container .form {
+  background: transparent !important;
+  border: none !important;
+}
+
+.gradio-container input[type="text"],
+.gradio-container input[type="password"],
+.gradio-container textarea,
+.gradio-container select {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  padding: 0.6rem 0.8rem !important;
+  transition: var(--transition) !important;
+}
+.gradio-container input:focus,
+.gradio-container textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-dim) !important;
+  outline: none !important;
+}
+
+.gradio-container label span {
+  color: var(--text-secondary) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+/* Dropdown styling */
+.gradio-container .dropdown-container {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* ============================================================
+   BOTONES PRINCIPALES
+   ============================================================ */
+.main-actions-row {
+  margin-top: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  gap: 0.75rem !important;
+}
+
+.btn-primary {
+  background: var(--accent-gradient) !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  padding: 0.75rem 1.6rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3) !important;
+}
+.btn-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+}
+.btn-primary:active { transform: translateY(0) !important; }
+
+.btn-secondary {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 0.75rem 1.2rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+.btn-secondary:hover {
+  border-color: var(--border-accent) !important;
+  color: var(--text-primary) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
+
+/* ============================================================
+   TABLA DE RESULTADOS & MARKDOWN
+   ============================================================ */
+#result-output, .result-area {
+  margin-top: 1rem;
+}
+.result-area table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.result-area th {
+  background: #181c2e !important;
+  color: var(--accent-light) !important;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border) !important;
+  text-align: left;
+}
+.result-area td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+  vertical-align: top;
+  line-height: 1.6;
+  color: var(--text-primary) !important;
+}
+.result-area tr:last-child td {
+  border-bottom: none !important;
+}
+.result-area tr:hover td {
+  background: rgba(99, 102, 241, 0.05) !important;
+}
+
+/* Accordion */
+#export-accordion {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  background: var(--bg-card) !important;
+  margin-top: 1.5rem !important;
+}
+
+.export-hint {
+  font-size: 0.82rem !important;
+  color: var(--text-secondary) !important;
+  margin-bottom: 0.85rem !important;
+}
+.export-hint kbd {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-light);
+}
+
+/* Toast Notification */
+.copy-toast {
+  display: none;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--success);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+}

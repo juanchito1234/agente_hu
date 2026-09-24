@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auditor de Historias de Usuario · Groq</title>
+  
+  <!-- Google Fonts & Marked library for markdown parsing -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <!-- Layout Wrapper -->
+  <div class="app-container" id="appContainer">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo">⚡ HU Auditor</div>
+        <button class="sb-collapse-btn" id="collapseSidebarBtn" title="Contraer panel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="sb-content">
+        <!-- Section: API Keys -->
+        <div class="sb-section">
+          <label class="sb-label">API KEYS GROQ</label>
+          <div class="select-wrapper">
+            <select id="keySelect" class="custom-select"></select>
+          </div>
+          <div class="sb-status" id="keyStatus">✅ 0 keys cargadas</div>
+
+          <div class="key-input-group">
+            <input type="password" id="newKeyInput" placeholder="gsk_..." class="custom-input">
+            <button id="toggleEyeBtn" class="icon-btn" title="Revelar/ocultar key">👁️</button>
+          </div>
+
+          <div class="sb-actions">
+            <button id="addKeyBtn" class="btn btn-accent-dim">＋ Agregar</button>
+            <button id="removeKeyBtn" class="btn btn-danger-dim" title="Eliminar seleccionada">✕</button>
+          </div>
+        </div>
+
+        <hr class="sb-divider">
+
+        <!-- Section: Modelo -->
+        <div class="sb-section">
+          <label class="sb-label">MODELO SELECCIONADO</label>
+          <div class="select-wrapper">
+            <select id="modelSelect" class="custom-select"></select>
+          </div>
+        </div>
+
+        <hr class="sb-divider">
+
+        <!-- Section: Status -->
+        <div class="sb-section">
+          <div class="sb-info-card" id="globalStatus">
+            <span>Estado: Listo</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Botón flotante para reabrir Sidebar -->
+    <button class="sidebar-expand-btn" id="expandSidebarBtn" title="Abrir panel lateral" style="display: none;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="main-header">
+        <span class="badge">⚡ Groq · INVEST Framework</span>
+        <h1>Auditor de Historias de Usuario</h1>
+        <p>Genera, evalúa y exporta Historias de Usuario optimizadas al marco INVEST.</p>
+      </header>
+
+      <div class="input-section">
+        <label for="storyInput" class="input-label">Contexto y funcionalidades del sistema</label>
+        <textarea id="storyInput" class="custom-textarea" rows="7" placeholder="Describe el contexto del proyecto y las funcionalidades que necesitas.&#10;&#10;Ejemplo:&#10;Sistema de gestión de biblioteca universitaria. Los estudiantes deben poder buscar libros, reservarlos en línea y recibir notificaciones cuando estén disponibles. Los bibliotecarios necesitan gestionar el inventario y generar reportes de préstamos."></textarea>
+      </div>
+
+      <div class="action-bar">
+        <button id="generateBtn" class="btn btn-primary">
+          <span class="btn-text">🚀 Generar Historias de Usuario</span>
+          <span class="spinner" id="spinner" style="display: none;"></span>
+        </button>
+        <button id="clearBtn" class="btn btn-secondary">🗑️ Limpiar</button>
+      </div>
+
+      <!-- Resultados -->
+      <section class="results-container" id="resultsSection" style="display: none;">
+        <div class="results-header">
+          <h2>Resultado de Auditoría</h2>
+          <button id="copyTableBtn" class="btn btn-copy">
+            📋 Copiar Tabla (Docs / Word)
+          </button>
+        </div>
+        <div id="markdownContent" class="markdown-body"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+*.spec
+
+# ── Entornos virtuales ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env.local
+.env.*.local
+
+# ── Variables de entorno / secretos ─────────────────────────────────────────
+# .env se ignora para no exponer API keys en el repositorio.
+# Usa .env.example como plantilla.
+.env
+*.env
+
+# ── Gradio / caché ───────────────────────────────────────────────────────────
+.gradio/
+gradio_cached_examples/
+flagged/
+
+# ── IDEs y editores ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# ── Jupyter ──────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Tests / cobertura ────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
