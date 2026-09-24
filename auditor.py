@@ -41,10 +41,4 @@ def audit_story(historia: str, model: str, client: Groq) -> str:
         **INFERENCE_PARAMS,
     )
 
-    full_response = ""
-    for chunk in response:
-        content = chunk.choices[0].delta.content
-        if content:
-            full_response += content
-
-    return full_response
+    return response.choices[0].message.content
