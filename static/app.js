@@ -195,40 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. Copiar tabla directamente al portapapeles (Docs / Word compatible)
   copyTableBtn.addEventListener('click', () => {
     const tableEl = markdownContent.querySelector('table');
-    
-    if (!tableEl && !currentRawTsv) {
-      showToast('⚠️ No hay ninguna tabla para copiar.', 'warn');
-      return;
-    }
 
-    // Preferir copiar directamente el HTML de la tabla para mantener formato completo en Word/Docs,
-    // acompañado del formato TSV plano como fallback en ClipboardItem.
-    let tsvText = currentRawTsv;
-    if (!tsvText && tableEl) {
-      tsvText = tableToTSV(tableEl);
-    }
-
-    if (navigator.clipboard && window.ClipboardItem && tableEl) {
-      try {
-        const htmlBlob = new Blob([tableEl.outerHTML], { type: 'text/html' });
-        const textBlob = new Blob([tsvText], { type: 'text/plain' });
-        const item = new ClipboardItem({
-          'text/html': htmlBlob,
-          'text/plain': textBlob
-        });
-
-        navigator.clipboard.write([item]).then(() => {
-          showToast('📋 ¡Tabla copiada! Pega directamente con Ctrl+V en Word o Docs.', 'ok');
-        }).catch(() => {
-          fallbackCopyText(tsvText);
-        });
+    if (!tableEl) {
+        showToast('⚠️ No se encontró ninguna tabla.', 'warn');
         return;
-      } catch (e) {
-        // Fallback standard
-      }
     }
 
-    fallbackCopyText(tsvText);
+    copyTableAsRichText(tableEl);
   });
 
   function tableToTSV(table) {
@@ -264,5 +237,82 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       toast.classList.remove('show');
     }, 3500);
+  }
+
+  async function copyTableAsRichText(table) {
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    const htmlRows = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('th, td'));
+
+        const htmlCells = cells.map(cell => {
+            const isHeader = cell.tagName.toLowerCase() === 'th';
+
+            return `
+                <${isHeader ? 'th' : 'td'}
+                    style="
+                        border: 1px solid #999;
+                        padding: 8px;
+                        text-align: left;
+                        vertical-align: top;
+                        background: ${isHeader ? '#eeeeee' : '#ffffff'};
+                        color: #000000;
+                    "
+                >
+                    ${cell.innerHTML}
+                </${isHeader ? 'th' : 'td'}>
+            `;
+        }).join('');
+
+        return `<tr>${htmlCells}</tr>`;
+    }).join('');
+
+    const html = `
+        <table style="
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            color: #000000;
+            background: #ffffff;
+        ">
+            ${htmlRows}
+        </table>
+    `;
+
+    const text = tableToTSV(table);
+
+    try {
+        const item = new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' })
+        });
+
+        await navigator.clipboard.write([item]);
+
+        showToast('📋 Tabla copiada correctamente.', 'ok');
+
+    } catch (error) {
+        console.error('Error copiando tabla:', error);
+
+        const tempArea = document.createElement('textarea');
+
+        tempArea.value = text;
+        tempArea.style.position = 'fixed';
+        tempArea.style.left = '-9999px';
+
+        document.body.appendChild(tempArea);
+        tempArea.focus();
+        tempArea.select();
+
+        const success = document.execCommand('copy');
+
+        document.body.removeChild(tempArea);
+
+        if (success) {
+            showToast('📋 Tabla copiada.', 'ok');
+        } else {
+            showToast('❌ No se pudo copiar la tabla.', 'warn');
+        }
+    }
   }
 });
