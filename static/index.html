@@ -76,34 +76,33 @@
     <!-- MAIN CONTENT -->
     <main class="main-content">
       <header class="main-header">
-        <span class="badge">⚡ Groq · INVEST Framework</span>
-        <h1>Auditor de Historias de Usuario</h1>
-        <p>Genera, evalúa y exporta Historias de Usuario optimizadas al marco INVEST.</p>
-      </header>
-
-      <div class="input-section">
-        <label for="storyInput" class="input-label">Contexto y funcionalidades del sistema</label>
-        <textarea id="storyInput" class="custom-textarea" rows="7" placeholder="Describe el contexto del proyecto y las funcionalidades que necesitas.&#10;&#10;Ejemplo:&#10;Sistema de gestión de biblioteca universitaria. Los estudiantes deben poder buscar libros, reservarlos en línea y recibir notificaciones cuando estén disponibles. Los bibliotecarios necesitan gestionar el inventario y generar reportes de préstamos."></textarea>
-      </div>
-
-      <div class="action-bar">
-        <button id="generateBtn" class="btn btn-primary">
-          <span class="btn-text">🚀 Generar Historias de Usuario</span>
-          <span class="spinner" id="spinner" style="display: none;"></span>
-        </button>
-        <button id="clearBtn" class="btn btn-secondary">🗑️ Limpiar</button>
-      </div>
-
-      <!-- Resultados -->
-      <section class="results-container" id="resultsSection" style="display: none;">
-        <div class="results-header">
-          <h2>Resultado de Auditoría</h2>
-          <button id="copyTableBtn" class="btn btn-copy">
-            📋 Copiar Tabla (Docs / Word)
+        <div class="header-top">
+          <div>
+            <span class="badge">⚡ Groq · INVEST Framework</span>
+            <h1>Asesor de Historias de Usuario & Arquitectura</h1>
+            <p>Chat interactivo con memoria persistente para auditar, refinar y generar Historias de Usuario.</p>
+          </div>
+          <button id="newChatBtn" class="btn btn-secondary" title="Reiniciar conversación">
+            <span>➕ Nuevo Chat</span>
           </button>
         </div>
-        <div id="markdownContent" class="markdown-body"></div>
-      </section>
+      </header>
+
+      <!-- Chat Stream Feed -->
+      <div class="chat-feed" id="chatFeed">
+        <!-- Los mensajes se renderizarán dinámicamente -->
+      </div>
+
+      <!-- Footer Sticky Chat Input -->
+      <div class="chat-input-container">
+        <div class="input-wrapper">
+          <textarea id="storyInput" class="custom-textarea chat-textarea" rows="2" placeholder="Escribe tu mensaje o pega una Historia de Usuario para auditar... (Shift+Enter para salto de línea)"></textarea>
+          <button id="generateBtn" class="btn btn-primary send-btn" title="Enviar mensaje">
+            <span class="btn-text">Enviar 🚀</span>
+            <span class="spinner" id="spinner" style="display: none;"></span>
+          </button>
+        </div>
+      </div>
     </main>
   </div>
 

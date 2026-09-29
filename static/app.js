@@ -1,7 +1,7 @@
 /**
- * app.js — Lógica de Interfaz y Cliente REST
- * Manejo de estado local de API keys, consumo del backend FastAPI,
- * colapsado de sidebar sin glitches y copiado directo de tabla en TSV/HTML.
+ * app.js — Chat Interactivo con Memoria y Persistencia en LocalStorage
+ * Manejo del historial de mensajes, guardado/restauración local en navegador,
+ * interacción continua con el LLM Groq y exportación de tablas en formato Rich Text / TSV.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,24 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelSelect = document.getElementById('modelSelect');
   const globalStatus = document.getElementById('globalStatus');
   
+  const chatFeed = document.getElementById('chatFeed');
   const storyInput = document.getElementById('storyInput');
   const generateBtn = document.getElementById('generateBtn');
-  const clearBtn = document.getElementById('clearBtn');
+  const newChatBtn = document.getElementById('newChatBtn');
   const spinner = document.getElementById('spinner');
-  
-  const resultsSection = document.getElementById('resultsSection');
-  const markdownContent = document.getElementById('markdownContent');
-  const copyTableBtn = document.getElementById('copyTableBtn');
   const toast = document.getElementById('toast');
 
-  // Estado de la sesión (en memoria local del navegador)
+  // Estado de la sesión
   let apiKeys = [];
-  let currentRawTsv = "";
+  let chatHistory = []; // Array de { role: 'user' | 'assistant', content: string, timestamp: string }
 
-  // 1. Inicialización: Cargar configuración desde el servidor
+  const STORAGE_KEY_CHAT = 'hu_auditor_chat_history';
+  const STORAGE_KEY_KEYS = 'hu_auditor_api_keys';
+
+  // 1. Inicialización: Cargar configuración y chat persistente
   init();
 
   async function init() {
+    loadLocalKeys();
+    loadLocalChat();
+
     try {
       const res = await fetch('/api/config');
       const data = await res.json();
@@ -47,9 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
         `<option value="${m}" ${m === data.defaultModel ? 'selected' : ''}>${m}</option>`
       ).join('');
 
-      // API Keys precargadas desde .env
-      if (data.defaultKeys && data.defaultKeys.length > 0) {
+      // API Keys precargadas desde .env si no hay en localStorage
+      if (apiKeys.length === 0 && data.defaultKeys && data.defaultKeys.length > 0) {
         apiKeys = [...data.defaultKeys];
+        saveLocalKeys();
       }
       renderKeys();
 
@@ -57,6 +61,36 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('⚠️ No se pudo conectar con el servidor backend.', 'warn');
       globalStatus.innerHTML = '<span style="color: var(--danger)">❌ Error de conexión</span>';
     }
+  }
+
+  // --- PERSISTENCIA LOCALSTORAGE ---
+  function loadLocalKeys() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_KEYS);
+      if (stored) apiKeys = JSON.parse(stored);
+    } catch (e) { console.error('Error al cargar keys:', e); }
+  }
+
+  function saveLocalKeys() {
+    try {
+      localStorage.setItem(STORAGE_KEY_KEYS, JSON.stringify(apiKeys));
+    } catch (e) { console.error('Error al guardar keys:', e); }
+  }
+
+  function loadLocalChat() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_CHAT);
+      if (stored) {
+        chatHistory = JSON.parse(stored);
+      }
+    } catch (e) { console.error('Error al cargar historial:', e); }
+    renderChatFeed();
+  }
+
+  function saveLocalChat() {
+    try {
+      localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(chatHistory));
+    } catch (e) { console.error('Error al guardar chat:', e); }
   }
 
   // 2. Manejo de Sidebar Toggle
@@ -70,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     expandSidebarBtn.style.display = 'none';
   });
 
-  // 3. Manejo de API Keys (dropdown + agregar + eliminar + censurar)
+  // 3. Manejo de API Keys
   function maskKey(key) {
     if (!key || key.length <= 8) return '****';
     return `${key.slice(0, 4)}${'*'.repeat(key.length - 8)}${key.slice(-4)}`;
@@ -93,13 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   toggleEyeBtn.addEventListener('click', () => {
-    if (newKeyInput.type === 'password') {
-      newKeyInput.type = 'text';
-      toggleEyeBtn.textContent = '🙈';
-    } else {
-      newKeyInput.type = 'password';
-      toggleEyeBtn.textContent = '👁️';
-    }
+    newKeyInput.type = newKeyInput.type === 'password' ? 'text' : 'password';
+    toggleEyeBtn.textContent = newKeyInput.type === 'password' ? '👁️' : '🙈';
   });
 
   addKeyBtn.addEventListener('click', () => {
@@ -113,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     apiKeys.push(val);
+    saveLocalKeys();
     newKeyInput.value = '';
     renderKeys();
     keySelect.value = val;
@@ -126,18 +156,95 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     apiKeys = apiKeys.filter(k => k !== selectedKey);
+    saveLocalKeys();
     renderKeys();
     showToast('🗑️ API Key eliminada.', 'ok');
   });
 
-  // 4. Acción de Auditoría (Generación)
-  generateBtn.addEventListener('click', async () => {
-    const historia = storyInput.value.trim();
+  // 4. Renderizado del Feed de Chat
+  function renderChatFeed() {
+    chatFeed.innerHTML = '';
+
+    if (chatHistory.length === 0) {
+      chatFeed.innerHTML = `
+        <div class="empty-chat">
+          <div class="empty-chat-icon">💬</div>
+          <h3>¡Bienvenido al Chat de Auditoría de Historias de Usuario!</h3>
+          <p>Escribe una historia de usuario o contexto de proyecto para comenzar. La conversación se guardará automáticamente.</p>
+        </div>
+      `;
+      return;
+    }
+
+    chatHistory.forEach((msg, idx) => {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `chat-message ${msg.role}`;
+      
+      const roleName = msg.role === 'user' ? 'TÚ' : '🤖 AUDITOR GROQ';
+      const timeStr = msg.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let contentHtml = '';
+      if (msg.role === 'user') {
+        contentHtml = `<div class="message-bubble">${escapeHtml(msg.content)}</div>`;
+      } else {
+        const parsedMd = marked.parse(msg.content);
+        const hasTable = parsedMd.includes('<table');
+        contentHtml = `
+          <div class="message-bubble markdown-body">
+            ${parsedMd}
+            ${hasTable ? `
+              <div class="message-actions">
+                <button class="btn btn-copy copy-msg-table-btn" data-msg-idx="${idx}">
+                  📋 Copiar Tabla (Docs / Word)
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      msgDiv.innerHTML = `
+        <div class="message-header">
+          <span>${roleName}</span> · <span>${timeStr}</span>
+        </div>
+        ${contentHtml}
+      `;
+
+      chatFeed.appendChild(msgDiv);
+    });
+
+    // Delegación de eventos para copiar tablas de respuestas específicas
+    document.querySelectorAll('.copy-msg-table-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        const msgBubble = e.target.closest('.message-bubble');
+        const tableEl = msgBubble.querySelector('table');
+        if (tableEl) {
+          copyTableAsRichText(tableEl);
+        } else {
+          showToast('⚠️ No se encontró tabla en este mensaje.', 'warn');
+        }
+      };
+    });
+
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  // 5. Envío de Mensaje al Chat
+  async function sendMessage() {
+    const text = storyInput.value.trim();
     const apiKey = keySelect.value;
     const model = modelSelect.value;
 
-    if (!historia) {
-      showToast('⚠️ Escribe o pega una Historia de Usuario primero.', 'warn');
+    if (!text) {
+      showToast('⚠️ Escribe un mensaje antes de enviar.', 'warn');
       storyInput.focus();
       return;
     }
@@ -147,32 +254,56 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Agregar mensaje del usuario
+    const userMsg = {
+      role: 'user',
+      content: text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    chatHistory.push(userMsg);
+    saveLocalChat();
+    renderChatFeed();
+
+    storyInput.value = '';
+    storyInput.style.height = 'auto';
+
     // UI Loading state
     generateBtn.disabled = true;
     spinner.style.display = 'inline-block';
     globalStatus.textContent = '🔄 Consultando a Groq...';
 
+    // Preparar array de mensajes para backend (role + content)
+    const formattedMessages = chatHistory.map(m => ({ role: m.role, content: m.content }));
+
     try {
       const response = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ historia, apiKey, model })
+        body: JSON.stringify({
+          messages: formattedMessages,
+          apiKey,
+          model
+        })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Error en la auditoría');
+        throw new Error(data.detail || 'Error al procesar el mensaje');
       }
 
-      // Render markdown response
-      currentRawTsv = data.tsv;
-      markdownContent.innerHTML = marked.parse(data.resultMarkdown);
-      resultsSection.style.display = 'block';
-      resultsSection.scrollIntoView({ behavior: 'smooth' });
+      // Guardar respuesta del asistente
+      const assistantMsg = {
+        role: 'assistant',
+        content: data.resultMarkdown,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
 
-      globalStatus.innerHTML = `<span style="color: var(--success)">✅ Listo · ${model}</span>`;
-      showToast('🚀 Auditoría generada correctamente.', 'ok');
+      chatHistory.push(assistantMsg);
+      saveLocalChat();
+      renderChatFeed();
+
+      globalStatus.innerHTML = `<span style="color: var(--success)">✅ Respondido · ${model}</span>`;
 
     } catch (err) {
       showToast(`❌ ${err.message}`, 'warn');
@@ -181,29 +312,31 @@ document.addEventListener('DOMContentLoaded', () => {
       generateBtn.disabled = false;
       spinner.style.display = 'none';
     }
-  });
+  }
 
-  // Limpiar
-  clearBtn.addEventListener('click', () => {
-    storyInput.value = '';
-    resultsSection.style.display = 'none';
-    markdownContent.innerHTML = '';
-    currentRawTsv = '';
-    globalStatus.textContent = 'Estado: Listo';
-  });
+  generateBtn.addEventListener('click', sendMessage);
 
-  // 5. Copiar tabla directamente al portapapeles (Docs / Word compatible)
-  copyTableBtn.addEventListener('click', () => {
-    const tableEl = markdownContent.querySelector('table');
-
-    if (!tableEl) {
-        showToast('⚠️ No se encontró ninguna tabla.', 'warn');
-        return;
+  // Manejo de Enter para enviar mensaje
+  storyInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
-
-    copyTableAsRichText(tableEl);
   });
 
+  // Reiniciar / Nuevo Chat
+  newChatBtn.addEventListener('click', () => {
+    if (chatHistory.length === 0) return;
+    if (confirm('¿Deseas iniciar una nueva conversación y borrar el historial actual?')) {
+      chatHistory = [];
+      saveLocalChat();
+      renderChatFeed();
+      globalStatus.textContent = 'Estado: Listo';
+      showToast('🧹 Nueva conversación iniciada.', 'ok');
+    }
+  });
+
+  // 6. Copiar tabla como Rich Text (Word / Google Docs compatible)
   function tableToTSV(table) {
     const rows = Array.from(table.querySelectorAll('tr'));
     return rows.map(row => {
@@ -212,42 +345,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('\n');
   }
 
-  function fallbackCopyText(text) {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('📋 Tabla copiada en formato TSV. Pega con Ctrl+V.', 'ok');
-    }).catch(() => {
-      const tempArea = document.createElement('textarea');
-      tempArea.value = text;
-      document.body.appendChild(tempArea);
-      tempArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(tempArea);
-      showToast('📋 Tabla copiada (fallback). Pega con Ctrl+V.', 'ok');
-    });
-  }
-
-  // Toast Helper
-  function showToast(msg, type = 'ok') {
-    toast.textContent = msg;
-    toast.style.background = type === 'warn' ? 'var(--warning)' : 'var(--success)';
-    toast.style.color = type === 'warn' ? '#000' : '#fff';
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 3500);
-  }
-
   async function copyTableAsRichText(table) {
     const rows = Array.from(table.querySelectorAll('tr'));
 
     const htmlRows = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('th, td'));
-
         const htmlCells = cells.map(cell => {
             const isHeader = cell.tagName.toLowerCase() === 'th';
-
             return `
                 <${isHeader ? 'th' : 'td'}
                     style="
@@ -288,31 +392,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         await navigator.clipboard.write([item]);
-
         showToast('📋 Tabla copiada correctamente.', 'ok');
 
     } catch (error) {
         console.error('Error copiando tabla:', error);
-
-        const tempArea = document.createElement('textarea');
-
-        tempArea.value = text;
-        tempArea.style.position = 'fixed';
-        tempArea.style.left = '-9999px';
-
-        document.body.appendChild(tempArea);
-        tempArea.focus();
-        tempArea.select();
-
-        const success = document.execCommand('copy');
-
-        document.body.removeChild(tempArea);
-
-        if (success) {
-            showToast('📋 Tabla copiada.', 'ok');
-        } else {
-            showToast('❌ No se pudo copiar la tabla.', 'warn');
-        }
+        fallbackCopyText(text);
     }
+  }
+
+  function fallbackCopyText(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 Tabla copiada en formato TSV. Pega con Ctrl+V.', 'ok');
+    }).catch(() => {
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempArea);
+      showToast('📋 Tabla copiada (fallback). Pega con Ctrl+V.', 'ok');
+    });
+  }
+
+  // Toast Helper
+  function showToast(msg, type = 'ok') {
+    toast.textContent = msg;
+    toast.style.background = type === 'warn' ? 'var(--warning)' : 'var(--success)';
+    toast.style.color = type === 'warn' ? '#000' : '#fff';
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3500);
   }
 });

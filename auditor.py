@@ -10,33 +10,39 @@ from groq import Groq
 from config import SYSTEM_PROMPT, INFERENCE_PARAMS
 
 
-def audit_story(historia: str, model: str, client: Groq) -> str:
+def audit_story(messages_or_story, model: str, client: Groq) -> str:
     """
-    Envía la historia de usuario al LLM y retorna la respuesta completa.
+    Envía la conversación (o la historia de usuario) al LLM y retorna la respuesta completa.
 
-    Cada llamada es independiente (sin historial): el contexto se compone
-    únicamente del system prompt y el mensaje del usuario actual.
+    Permite memoria en la conversación pasando una lista de mensajes [{'role': '...', 'content': '...'}]
+    o un string directo.
 
     Args:
-        historia: Texto de la Historia de Usuario a auditar.
-        model:    Identificador del modelo Groq a utilizar.
-        client:   Cliente Groq autenticado (inyectado desde la UI).
+        messages_or_story: Lista de dicts de mensajes o texto de la Historia de Usuario.
+        model:             Identificador del modelo Groq a utilizar.
+        client:            Cliente Groq autenticado.
 
     Returns:
         Respuesta completa del modelo como string (markdown).
-
-    Raises:
-        ValueError: Si la historia está vacía.
-        Exception:  Cualquier error de la API Groq se propaga al llamador.
     """
-    if not historia or not historia.strip():
-        raise ValueError("La historia de usuario no puede estar vacía.")
+    if isinstance(messages_or_story, list):
+        # Asegurar que el system prompt esté presente como primer mensaje
+        chat_messages = []
+        if not messages_or_story or messages_or_story[0].get("role") != "system":
+            chat_messages.append({"role": "system", "content": SYSTEM_PROMPT})
+        chat_messages.extend(messages_or_story)
+    elif isinstance(messages_or_story, str):
+        if not messages_or_story.strip():
+            raise ValueError("La historia de usuario no puede estar vacía.")
+        chat_messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": messages_or_story.strip()},
+        ]
+    else:
+        raise ValueError("Formato de mensajes no válido.")
 
     response = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": historia.strip()},
-        ],
+        messages=chat_messages,
         model=model,
         **INFERENCE_PARAMS,
     )

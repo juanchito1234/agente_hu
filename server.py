@@ -20,9 +20,14 @@ from table_formatter import markdown_to_tsv, has_table
 
 app = FastAPI(title="Auditor de Historias de Usuario API")
 
-# Modelo de petición para auditar
+# Modelo de petición para auditar / conversar
+class MessageItem(BaseModel):
+    role: str
+    content: str
+
 class AuditRequest(BaseModel):
-    historia: str
+    historia: Optional[str] = None
+    messages: Optional[List[MessageItem]] = None
     apiKey: str
     model: str
 
@@ -38,16 +43,21 @@ def get_config():
 
 @app.post("/api/audit")
 def handle_audit(req: AuditRequest):
-    """Ejecuta la auditoría utilizando la key y modelo enviados."""
-    if not req.historia or not req.historia.strip():
-        raise HTTPException(status_code=400, detail="Por favor ingresa el contexto o la Historia de Usuario.")
+    """Ejecuta la auditoría o respuesta del chat utilizando la key y modelo enviados."""
+    input_data = None
+    if req.messages and len(req.messages) > 0:
+        input_data = [msg.model_dump() for msg in req.messages]
+    elif req.historia and req.historia.strip():
+        input_data = req.historia.strip()
+    else:
+        raise HTTPException(status_code=400, detail="Por favor ingresa un mensaje o Historia de Usuario.")
     
     if not req.apiKey or not req.apiKey.strip():
         raise HTTPException(status_code=400, detail="Por favor selecciona o ingresa una API Key de Groq válida.")
 
     try:
         client = create_client(req.apiKey)
-        result_md = audit_story(req.historia, req.model, client)
+        result_md = audit_story(input_data, req.model, client)
         tsv_data = markdown_to_tsv(result_md) if has_table(result_md) else ""
         return {
             "success": True,
